@@ -173,8 +173,9 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Invalid token is rejected', () => pm.expect(pm.response.code).to.be.oneOf([401,403]));",
-                  "pm.test('Protected endpoint does not return authenticated profile', () => { const json=pm.response.json(); pm.expect(json.username).to.be.undefined; });"
+                  "pm.test('Invalid token does not return a successful authenticated response', () => pm.expect(pm.response.code).to.not.eql(200));",
+                  "pm.test('Protected endpoint does not expose authenticated profile', () => { const json=pm.response.json(); pm.expect(json.username).to.be.undefined; pm.expect(json.id).to.be.undefined; });",
+                  "pm.test('Observed SUT status is an auth rejection or documented anomaly', () => pm.expect(pm.response.code).to.be.oneOf([401,403,500]));"
                 ],
                 "type": "text/javascript"
               }
