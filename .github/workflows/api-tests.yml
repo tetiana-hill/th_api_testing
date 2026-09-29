@@ -1,0 +1,36 @@
+name: API Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  newman:
+    name: Postman / Newman
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Newman
+        run: npm install --global newman
+
+      - name: Run API test collection
+        run: |
+          newman run postman/DummyJSON-QA-Portfolio.postman_collection.json \
+            --environment postman/DummyJSON-QA.postman_environment.json \
+            --reporters cli \
+            --color on
