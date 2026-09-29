@@ -152,7 +152,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "invalid.jwt.token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJxYS1wb3J0Zm9saW8iLCJleHAiOjQ3MjIzNjQ4MDB9.invalidsignature",
                   "type": "string"
                 }
               ]
