@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "DummyJSON API — QA Portfolio",
-    "description": "Executable API QA portfolio by Tetiana Hil. Covers auth, products, pagination, search, sorting, mutation contracts and negative/status scenarios.",
+    "description": "Executable API QA portfolio by Tetiana Hil. Covers auth, JSON Schema validation, products, pagination boundaries, search, sorting, mutation contracts and negative/status scenarios.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -48,6 +48,8 @@
                   "const json = pm.response.json();",
                   "pm.test('Tokens are returned', () => { pm.expect(json.accessToken).to.be.a('string').and.not.empty; pm.expect(json.refreshToken).to.be.a('string').and.not.empty; });",
                   "pm.test('Correct user is returned', () => pm.expect(json.username).to.eql(pm.environment.get('username')));",
+                  "const loginSchema = { type: 'object', required: ['id','username','email','accessToken','refreshToken'], properties: { id:{type:'number'}, username:{type:'string'}, email:{type:'string'}, accessToken:{type:'string'}, refreshToken:{type:'string'} } };",
+                  "pm.test('Login response matches JSON Schema', () => pm.response.to.have.jsonSchema(loginSchema));",
                   "pm.environment.set('accessToken', json.accessToken); pm.environment.set('refreshToken', json.refreshToken);"
                 ],
                 "type": "text/javascript"
@@ -139,6 +141,45 @@
               }
             }
           ]
+        },
+        {
+          "name": "AUTH-04 Current user — invalid Bearer token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "invalid.jwt.token",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid token is rejected', () => pm.expect(pm.response.code).to.be.oneOf([401,403]));",
+                  "pm.test('Protected endpoint does not return authenticated profile', () => { const json=pm.response.json(); pm.expect(json.username).to.be.undefined; });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         }
       ]
     },
@@ -169,7 +210,9 @@
                   "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
                   "const json = pm.response.json();",
                   "pm.test('Product ID is 1', () => pm.expect(json.id).to.eql(1));",
-                  "pm.test('Core product contract', () => { pm.expect(json.title).to.be.a('string'); pm.expect(json.price).to.be.a('number'); pm.expect(json.category).to.be.a('string'); });"
+                  "pm.test('Core product contract', () => { pm.expect(json.title).to.be.a('string'); pm.expect(json.price).to.be.a('number'); pm.expect(json.category).to.be.a('string'); });",
+                  "const productSchema = { type:'object', required:['id','title','price','category'], properties:{ id:{type:'number'}, title:{type:'string'}, price:{type:'number'}, category:{type:'string'} } };",
+                  "pm.test('Product response matches JSON Schema', () => pm.response.to.have.jsonSchema(productSchema));"
                 ],
                 "type": "text/javascript"
               }
@@ -236,7 +279,119 @@
                 "exec": [
                   "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
                   "const json = pm.response.json();",
-                  "pm.test('Requested pagination is respected', () => { pm.expect(json.products.length).to.be.at.most(5); pm.expect(json.skip).to.eql(10); pm.expect(json.limit).to.eql(5); });"
+                  "pm.test('Requested pagination is respected', () => { pm.expect(json.products.length).to.be.at.most(5); pm.expect(json.skip).to.eql(10); pm.expect(json.limit).to.eql(5); });",
+                  "const listSchema = { type:'object', required:['products','total','skip','limit'], properties:{ products:{type:'array'}, total:{type:'number'}, skip:{type:'number'}, limit:{type:'number'} } };",
+                  "pm.test('Product list matches JSON Schema', () => pm.response.to.have.jsonSchema(listSchema));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "PROD-04 Empty page beyond dataset",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?limit=5&skip=999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "skip",
+                  "value": "999999"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json=pm.response.json();",
+                  "pm.test('Out-of-range page is empty', () => { pm.expect(json.products).to.be.an('array').that.is.empty; pm.expect(json.skip).to.eql(999999); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "PROD-05 Zero limit boundary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?limit=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json=pm.response.json();",
+                  "pm.test('limit=0 returns all items according to DummyJSON contract', () => { pm.expect(json.products).to.be.an('array'); pm.expect(json.products.length).to.eql(json.total); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "PROD-06 Search with no matches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/search?q=qa-portfolio-no-such-product-987654",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "qa-portfolio-no-such-product-987654"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json=pm.response.json();",
+                  "pm.test('No-match search returns empty collection', () => { pm.expect(json.products).to.be.an('array').that.is.empty; pm.expect(json.total).to.eql(0); });"
                 ],
                 "type": "text/javascript"
               }
