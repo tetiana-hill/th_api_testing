@@ -1,5 +1,7 @@
 # API & Backend QA Portfolio
 
+[![API Tests](https://github.com/tetiana-hill/th_api_testing/actions/workflows/api-tests.yml/badge.svg)](https://github.com/tetiana-hill/th_api_testing/actions/workflows/api-tests.yml)
+
 Practical API testing portfolio by **Tetiana Hil**, QA Engineer with a backend-focused testing background.
 
 This repository demonstrates how I approach REST API testing: requirements analysis, risk-based test design, positive and negative scenarios, authentication, response validation, pagination/search/sorting, state-changing operations, and clear documentation of test-environment limitations.
@@ -28,6 +30,7 @@ Covered areas:
 ├── docs/
 │   ├── test-strategy.md
 │   └── test-cases.md
+├── .github/workflows/api-tests.yml
 └── postman/
     ├── DummyJSON-QA-Portfolio.postman_collection.json
     └── DummyJSON-QA.postman_environment.json
@@ -62,11 +65,21 @@ The collection uses the public DummyJSON demo credentials documented by the API 
 - [Test strategy](docs/test-strategy.md)
 - [Test cases](docs/test-cases.md)
 
+## CI / Newman
+
+The collection is executed automatically with **Newman in GitHub Actions** on every push and pull request to `main`.
+
+### Run from CLI
+
+```bash
+npm install --global newman
+newman run postman/DummyJSON-QA-Portfolio.postman_collection.json \
+  --environment postman/DummyJSON-QA.postman_environment.json
+```
+
 ## Roadmap
 
 Next portfolio stages will add:
-- Newman command-line execution;
-- GitHub Actions CI;
 - expanded negative and boundary coverage;
 - JSON Schema validation;
 - a separate backend test environment with a real database for API ↔ DB consistency checks;
